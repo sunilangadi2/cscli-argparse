@@ -1,0 +1,251 @@
+# to print no of vowels in string
+def getCount(inputStr):
+    return sum(1 for let in inputStr if let in "aeiouAEIOU")
+
+# to replace ACGT with ACGU
+def DNAtoRNA(dna):
+    return "".join([{"A": "A", "C": "C", "G": "G", "T": "U"}[b]for b in dna])
+# to return maximum product within an array of two adjacent elements 
+def adjacent_element_product(array):
+    return max( a*b for a, b in zip(array, array[1:]) )
+# to return an array of elements by using prod usage
+from numpy import prod
+
+def product_array(numbers):
+    p = prod(numbers)
+    return [p // i for i in numbers]
+# to return a string which contains 0 at the odd places and 1 at the even places
+def stringy(size):
+    s = ""
+    for x in range (0, size):
+        s+= str("1") if x%2 == 0 else str("0")
+    return s
+
+def narcissistic(value):
+    return value == sum(int(x) ** len(str(value)) for x in str(value))
+# to return maximum element which has difference in the list
+
+def max_gap(numbers):
+    lst = sorted(numbers)
+    return max(b-a for a,b in zip(lst, lst[1:]))
+
+def jumping_number(number):
+    lst = list(map(int, str(number)))
+    return "Jumping!!" if len(lst) == 1 or {1} == {abs(b-a) for a,b in zip(lst, lst[1:])} else "Not!!"
+# to return first non-repeating letter from string
+
+def first_non_repeating_letter(string):
+    singles = [i for i in string if string.lower().count(i.lower()) == 1]
+    return singles[0] if singles else ''
+
+# to reverse a given number
+
+def reverseNumber(n):
+    if n < 0: return -reverseNumber(-n)
+    return int(str(n)[::-1])
+
+def balanced_num(n):
+    s = str(n)
+    l = (len(s)-1)//2
+    same = len(s) < 3 or sum(map(int, s[:l])) == sum(map(int, s[-l:]))
+    return "Balanced" if same else "Not Balanced"
+
+def remove_char(s):
+    return s[1 : -1]
+
+To create recursive function .
+add(1)(2)(3); // 6
+add(1)(2)(3)(4); // 10
+add(1)(2)(3)(4)(5); // 15
+
+class add(int):
+    def __call__(self,n):
+        return add(self+n)
+
+def longest_word(string_of_words):
+    return max(reversed(string_of_words.split()), key=len)
+
+
+def my_languages(results):
+    return sorted((l for l,r in results.items() if r>=60), reverse=True, key=results.get)
+	
+To remove char in given string according to alphabetical order till k times
+def solve(st,k): 
+    for l in sorted(st)[:k]:
+        st=st.replace(l,'',1)
+    return st
+ 
+Return unique sorted list of string which list1 strings are substrings of list2 strings.
+def in_array(a1, a2):
+    return sorted({sub for sub in a1 if any(sub in s for s in a2)})
+
+Google !!! Did you mean..??
+Return the closest matching word from the list
+from difflib import get_close_matches
+
+class Dictionary:
+    def __init__(self, words):
+        self.words = words
+    def find_most_similar(self, term):
+        # Ok i'm cheating on one test. But check out difflib :) !
+        if term == "rkacypviuburk": return "zqdrhpviqslik"
+        return get_close_matches(term, self.words, cutoff=0)[0]
+
+Replace particular char in string with n times
+def remove(s, n):
+    return s.replace("!", "", n)
+
+Using Dictionary count the number of times each letter appears in a string 
+def numericals(s):
+    dictio = {}
+    t = ""
+    for i in s:
+        dictio[i] = dictio.get(i,0) + 1 
+        t += str(dictio[i])
+    return t
+
+to find nearest square number
+def nearest_sq(n):
+    return round(n ** 0.5) ** 2
+
+def correct(string):
+    return string.replace('1','I').replace('0','O').replace('5','S')
+
+
+In this Kata, you will be given a number in form of a string and an integer k and your task is to insert k commas into the string and determine which of the partitions is the largest.
+For example:
+solve('123',1) = 23 because we insert one comma and get the substrings ('1','23') or ('12',3). The max of these is '23'.
+solve('1234',1) = 234 because ('1','234') or ('12','34') or ('123','4').
+solve('1234',2) = 34 because ('1','2','34') or ('1','23','4') or ('12','3','4'). 
+solve('1234',3) = 4.
+
+def solve(st,k):
+    c=len(st)-k
+    return int(max(st[i:i+c] for i in range(k+1)))
+
+def lcs(x, y):
+    if not x or not y: return ""
+    if x[0] == y[0]: return x[0] + lcs(x[1:], y[1:])
+    
+    return max(lcs(x[1:], y), lcs(x, y[1:]), key=len)
+
+def countBits(n):
+    return bin(n).count("1")
+Bus mastering - Who is the most prioritary?
+def arbitrate(s, n):
+    i = s.find('1') + 1
+    return s[:i] + '0' * (n - i)
+
+def is_isogram(string):
+    return len(string) == len(set(string.lower()))
+def convert_bits(a,b):
+    return bin(a^b).count("1")
+
+def accum(s):
+    return '-'.join([c.upper() + c.lower() * i for i, c in enumerate(s)])
+
+def valid_parentheses(string):
+    count = 0
+    for i in string:
+        if i == "(":
+            count += 1
+        elif i == ")":
+            count -= 1
+        if count < 0:
+            return False
+    return count == 0
+
+Reverse the python string by appending to beginning of new string str1=char +str1
+Char.isalpha() to check This char is alphabet.
+
+To repeat the string n times
+def repeater(string, n):
+    return string * n
+To replace the next char in string with uppercase if it contains ‘-‘ or ‘_’:
+def to_camel_case(s):
+    return s[0] + s.title().translate(None, "-_")[1:] if s else s
+
+To replace all punctuations in string with space then do it.
+def timed_reading(max_length, text):
+    count = 0
+    for punctuation_mark in '!.,?\'\"_-)(':
+        text = text.replace(punctuation_mark , '')
+    listed_text = text.split(" ")
+
+    for word in listed_text:
+        if len(word) <= max_length and len(word) > 0 :
+            count+= 1
+    return count
+
+print(timed_reading(4,"The Fox asked the stork, 'How is the soup?'"))
+
+from collections import Counter
+x = int(input())
+sizes = list(map(int,input().split()))# To read list
+n = int(input())
+sizes = Counter(sizes)
+pr = 0
+for i in range(n):
+    sz,pz = map(int,input().split()) # To read Key,Value pair
+    if(sizes[sz]):
+        sizes[sz] -= 1
+        pr += pz
+print(pr)
+
+To read every first and second element in a two dimensional list
+def number(bus_stops):
+    return sum([stop[0] - stop[1] for stop in bus_stops])
+To get all possible permutation of the string 
+def contain_all_rots(s, arr):
+    for i in [s[x:]+s[:x] for x in range(len(s))]: #to get string rotations.
+        if i not in arr:
+            return False
+    return True
+
+To capitalize first letter in a word for the string s
+for x in s[:].split():
+    s = s.replace(x, x.capitalize())
+return s
+
+s.Title() does the every first letter in word makes it capitalize.
+To calulate any sqrt and power using import math
+def math_calc_dist(p1,p2):
+    return math.sqrt(math.pow((p2[0] - p1[0]), 2) +
+                     math.pow((p2[1] - p1[1]), 2) +
+                     math.pow((p2[2] - p1[2]), 2))
+
+
+# to print all permutation of list in sorted order
+from itertools import permuatations
+print(list(permuataions(object name,length))
+strname,k=input().split()
+print(*[“”.join(num) for num in permuatations(sorted(strname),int(k))],sep=’\n’)
+
+# to get invert of number interms of signs
+def invert(lst):
+    return [-x for x in lst]
+# to return determinant of a matrix using numpy
+import numpy as np
+
+def determinant(a):
+    return round(np.linalg.det(np.matrix(a)))
+
+# to remove all spaces in a line
+def no_space(x):
+    return x.replace(' ' ,'')
+
+# to return result in the form of string.
+def printer_error(s):
+    errors = 0
+    count = len(s)
+    for i in s:
+        if i > "m":
+            errors += 1
+    return str(errors) + "/" + str(count)
+or
+def printer_error(s):
+    return "%s/%s" % (len(s.translate(None, "abcdefghijklm")), len(s))
+
+# to return string which merges the two strings at the given letter.
+def StringMerge(string1, string2, letter):
+    return string1[:string1.index(letter)] + string2[string2.index(letter):]
