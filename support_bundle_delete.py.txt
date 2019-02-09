@@ -1,0 +1,38 @@
+from t0.log import logger
+from t0.backend.debuglog import SupportBundleService
+from t0.cli.handlers.base_handler import BaseHandler, SubCommandHandler
+from t0.cli.exceptions import CliError,CliInvalidArg
+
+
+
+class DeleteHandler(SubCommandHandler):
+    """Implementation of 'cscli support_bundle delete' command."""
+
+    @classmethod
+    def description(cls):
+        return 'delete support bundle.'
+
+    @classmethod
+    def arg_subparser(cls, subparsers):
+        sp = subparsers.add_parser('delete', help=cls.description())
+        sp.add_argument("bundle_id", type=int, help='the ID number of the '
+                        'support bundle file, which can be obtained from '
+                        '"cscli support_bundle show -b".')
+        sp.add_argument("--force", action="store_true", dest="force",
+                        help="force deletion of support bundle in progress.")
+        sp.set_defaults(func=cls.handler)
+
+    @classmethod
+    def handler(cls, args):
+        service = SupportBundleService()
+        service.setRequestor(BaseHandler.requestor())
+        try:
+            service.getBundle(args.bundle_id)
+        except ValueError:
+            raise CliInvalidArg('Support bundle %s was not found.' % args.bundle_id)
+        try:
+            retval = service.deleteBundle(args.bundle_id, args.force)
+            if retval:
+                logger.info("Support bundle %s deleted." % args.bundle_id)
+        except Exception as exc:
+            raise CliError(exc)

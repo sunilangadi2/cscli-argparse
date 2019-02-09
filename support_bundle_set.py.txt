@@ -1,0 +1,63 @@
+from t0.cli.handlers.base_handler import BaseHandler, SubCommandHandler
+from t0.backend.debuglog import SupportBundleService, SupportBundleTrigger
+from t0.cli.exceptions import CliError
+
+
+class SetHandler(SubCommandHandler):
+    """Implementation of 'cscli support_bundle set' command."""
+
+    @classmethod
+    def description(cls):
+        return 'support_bundle set command.'
+
+    @classmethod
+    def arg_subparser(cls, subparsers):
+        sp = subparsers.add_parser('set', help=cls.description())
+        e_group = sp.add_mutually_exclusive_group(required=True)
+        e_group.add_argument("-p", "--purge-limit", action="store", dest="purge_limit",
+                             type=int, help="set purge-limit for support bundles in %%.")
+        e_group.add_argument("--trigger", "-t", action="store", dest="trigger", type=str,
+                             choices=SupportBundleTrigger.names(),
+                             help="show triggers, that initiate automatic bundle collection.")
+        b_group = sp.add_mutually_exclusive_group()
+        b_group.add_argument('--on', action='store_true', dest='on_off', default=None)
+        b_group.add_argument('--enable', action='store_true', dest='on_off', default=None)
+        b_group.add_argument('--off', action='store_false', dest='on_off', default=None)
+        b_group.add_argument('--disable', action='store_false', dest='on_off', default=None)
+        sp.set_defaults(func=cls.handler)
+
+    @classmethod
+    def handler(cls, args):
+        service = SupportBundleService()
+        service.setRequestor(BaseHandler.requestor())
+        if not args.purge_limit is None:
+            cls.set_purge_limit(args.purge_limit, service)
+            return
+        if args.on_off is None:
+            raise CliError("Missed --enable or --disable option for 'set --trigger %s'" % args.trigger)
+        else:
+            cls.set_trigger(service, args.trigger, args.on_off)
+
+    @classmethod
+    def set_trigger(cls, service, trigger_name, enable):
+        trigger = SupportBundleTrigger.valueOf(trigger_name)
+        triggers = service.getEnabledTriggers()
+
+        if enable:
+            if not trigger in triggers:
+                triggers.append(trigger)
+        else:
+            if trigger in triggers:
+                triggers.remove(trigger)
+
+        service.setEnabledTriggers(triggers)
+        print("Trigger %s is %s" % (trigger.name,
+              "enabled" if enable else "disabled"))
+
+    @classmethod
+    def set_purge_limit(cls, purge_limit, service):
+        try:
+            service.setPurgeLimit(purge_limit)
+        except ValueError, e:
+            raise CliError("%s" % e)
+        print("Purge limit changed to %d%%" % purge_limit)

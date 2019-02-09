@@ -1,0 +1,64 @@
+import time
+
+from t0.cli.handlers.base_handler import BaseHandler, SubCommandHandler
+from t0.backend import LBugBundleInfo
+from t0.backend.debuglog import SupportBundleService
+
+
+class ShowHandler(SubCommandHandler):
+    """Implementation of 'cscli support_bundle show' command."""
+
+    @classmethod
+    def description(cls):
+        return 'support_bundle show command.'
+
+    @classmethod
+    def arg_subparser(cls, subparsers):
+        sp = subparsers.add_parser('show', help=cls.description())
+        e_group = sp.add_mutually_exclusive_group(required=True)
+        e_group.add_argument("--triggers", "-t", action="store_true", dest="show_triggers",
+                             help="show triggers, that initiate automatic bundle collection.")
+        e_group.add_argument("--bundles", "-b", action="store_true", dest="show_bundles",
+                             help="show list of support bundles collected.")
+        e_group.add_argument("--purge-limit", "-p", action="store_true", dest="show_purge_limit",
+                             help="show purge limit. Free filesystem space limit in percents, "
+                             "after reaching which Trinity will purge old  support bundle files.")
+        sp.set_defaults(func=cls.handler)
+
+    @classmethod
+    def handler(cls, args):
+        service = SupportBundleService()
+        service.setRequestor(BaseHandler.requestor())
+        if args.show_bundles:
+            cls.show_bundles(service)
+        elif args.show_triggers:
+            cls.show_triggers(service)
+        elif args.show_purge_limit:
+            cls.show_purge_limit(service)
+
+    @classmethod
+    def show_purge_limit(cls, service):
+        print("Purge limit is %d%%" % service.getPurgeLimit())
+
+    @classmethod
+    def show_triggers(cls, service):
+        triggers = service.getEnabledTriggers()
+        if triggers:
+            names = ", ".join(map(lambda t: t.name, triggers))
+            print("Enabled triggers: %s" % names)
+        else:
+            print("No triggers enabled")
+
+    @classmethod
+    def show_bundles(cls, service):
+        "Show list of support bundles"
+        bundles = service.listBundles()
+        fmt = '%-3s | %-20s | %-6s | %-8s | %-8s'
+        print fmt % ('ID', 'Completion time', 'Method', 'Reason', 'Status')
+        for bnd in bundles:
+            status = LBugBundleInfo.STATUS[bnd.status]
+            if bnd.status == LBugBundleInfo.STATUS_IN_PROGRESS:
+                status += ' (%d%%)' % bnd.percent_complete
+            print fmt % (bnd.bundle_id, time.strftime('%Y-%m-%d %T', bnd.collection_datetime),
+                         LBugBundleInfo.METHOD[bnd.method], bnd.reason, status)
+        print '*** Total %d bundles' % len(bundles)

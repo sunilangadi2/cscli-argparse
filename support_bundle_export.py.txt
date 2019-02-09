@@ -1,0 +1,37 @@
+import os
+import shutil
+
+from t0.cli.handlers.base_handler import BaseHandler, SubCommandHandler
+from t0.cli.exceptions import CliError
+from t0.backend import LBugBundleInfo
+from t0.backend.debuglog import SupportBundleService
+
+
+class ExportHandler(SubCommandHandler):
+    """Implementation of 'cscli support_bundle export' command."""
+
+    @classmethod
+    def description(cls):
+        return 'export support bundles as Tar.GZ archive (into the current folder).'
+
+    @classmethod
+    def arg_subparser(cls, subparsers):
+        sp = subparsers.add_parser('export', help=cls.description())
+        sp.add_argument('bundle_id', type=int,
+                        help='identifier of bundle that should be exported.')
+        sp.set_defaults(func=cls.export)
+
+    @classmethod
+    def export(cls, args):
+        service = SupportBundleService()
+        service.setRequestor(BaseHandler.requestor())
+        try:
+            bundle = service.getBundle(args.bundle_id)
+        except ValueError:
+            raise CliError("Support bundle with id %s not found" % args.bundle_id)
+        if bundle.status in (LBugBundleInfo.STATUS_PENDING, LBugBundleInfo.STATUS_IN_PROGRESS):
+            raise CliError("Collection of support bundle with id %s is in progress" % args.bundle_id)
+        fileName = os.path.basename(bundle.bundle_file)
+        shutil.copy(bundle.bundle_file, fileName)
+        print("Support bundle with id %s saved in file %s" % (args.bundle_id, fileName))
+# end of file

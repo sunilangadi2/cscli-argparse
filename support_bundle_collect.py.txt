@@ -1,0 +1,115 @@
+from t0.backend.objects import NodeInfo
+from t0.utils.pdsh import parse_nodes
+from t0.cli.handlers.base_handler import BaseHandler, SubCommandHandler
+from t0.backend.debuglog import SupportBundleService
+from t0.cli.exceptions import CliError
+import time as _time
+import datetime
+
+class CollectHandler(SubCommandHandler):
+    """Implementation of 'cscli support_bundle collect' command."""
+
+    @classmethod
+    def description(cls):
+        return 'initiate (request) collection of the support bundle on specified set of nodes.'
+
+    @classmethod
+    def arg_subparser(cls, subparsers):
+        sp = subparsers.add_parser('collect', help=cls.description())
+        sp.add_argument("-n", "--nodes", action="store", dest="nodes",
+                        help="pdsh style node names. Default - all nodes.")
+        sp.add_argument("-t", "--time-window", action="store",
+                        dest="window", default=45,
+                        metavar='MINUTES', type=int,
+                        help="time window in minutes. Default - 45 minutes.")
+        sp.add_argument("-D", "--start-date", action="store",
+                        dest="start_date", default=None,
+                        metavar='date_spec', type=str,
+                        help="Date to start collecting bundle from, specified as [[[YY]YY-]MM-]DD. Default: today")
+        sp.add_argument("-T", "--start-time", action="store",
+                        dest="start_time", default=None,
+                        metavar='time_spec', type=str,
+                        help="Time to start collecting bundle from, specified as HH:MM[:SS]. Default: now-WINDOW if no date is specified, start of the day otherwise")
+        sp.set_defaults(func=cls.handler)
+
+    @classmethod
+    def handler(cls, args):
+        "support_bundle collect command handler"
+        service = SupportBundleService()
+        service.setRequestor(BaseHandler.requestor())
+        nodes = []
+        if args.nodes:
+            try:
+                nodes = parse_nodes(args.nodes)
+            except RuntimeError:
+                raise CliError("Invalid pdsh expression: %s" % args.nodes)
+            if not nodes:
+                raise CliError("Empty set of nodes: %s" % args.nodes)
+            for name in nodes:
+                if NodeInfo().get_by_host(name) is None:
+                    raise CliError("Node %s not found" % name)
+        date_formats = ('%Y-%m-%d', '%y-%m-%d', '%m-%d', '%d')
+        time_formats = ('%H:%M:%S', '%H:%M')
+        date = None
+        time = None
+        date_err = False
+        time_err = False
+        now = datetime.datetime.now()
+        today = now.today().date()
+        now = now.time()
+        if args.start_date is not None:
+            for f in date_formats:
+                try:
+                    date = datetime.datetime.strptime(args.start_date, f).date()
+                    if date > today:
+                        date_err = True
+                        break
+                    date_err = False
+                    break
+                except ValueError:
+                    date = None
+                    date_err = True
+            if not date_err:
+                d_len = len(args.start_date.split("-"))
+                if d_len == 2: # month-day
+                    date = date.replace(year=datetime.date.today().year)
+                elif d_len == 1: # day
+                    year = today.year
+                    month = today.month
+                    date = date.replace(year=year, month=month)
+        if args.start_time is not None:
+            for f in time_formats:
+                try:
+                    time = datetime.datetime.strptime(args.start_time, f).time()
+                    time_err = False
+                    break
+                except ValueError:
+                    time = None
+                    time_err = True
+        if date_err:
+            raise CliError("Incorrect date") 
+        if time_err:
+            raise CliError("Incorrect time") 
+        
+	if args.window <= 0:
+	    raise CliError("Incorrect time window. Please provide positive value.")
+        
+	if date is None and time is None:
+            start = "NOW-%smin" % args.window
+            start_unix = _time.time() - int(args.window)*60
+        else:
+            if date is None:
+                date = today
+            elif time is None:
+                time = datetime.datetime(1997,8,29,hour=0,minute=0,second=0).time()
+            start = datetime.datetime.combine(date, time)
+            start_unix = int(start.strftime("%s"))
+        bundle_id = service.generateBundle(nodes, args.window, start=start_unix)
+
+        if not bundle_id:
+            raise CliError("Failed to start collecting of support bundle. "
+                           "Is bundle collection already in progress?")
+
+        message = "Collecting support bundle: id:%s, nodes:%s, starting at %s, time-window:%s minute(s)"
+        args = (bundle_id, args.nodes if args.nodes else "all", start, args.window)
+        print(message % args)

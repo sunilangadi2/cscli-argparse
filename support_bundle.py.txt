@@ -1,0 +1,70 @@
+import sys
+
+from t0.backend.objects import ClusterMode
+from t0.cli.handlers.base_handler import BaseHandler
+
+
+class SupportBundleHandler(BaseHandler):
+
+    @classmethod
+    def modes(cls):
+        return ClusterMode.CUSTOMER, ClusterMode.DAILY,  ClusterMode.BENCHMARK
+
+    @classmethod
+    def command(cls):
+        return "support_bundle"
+
+    @classmethod
+    def description(cls):
+        return "Manage support bundles and support bundle settings."
+
+    @classmethod
+    def arg_parser(cls, parser):
+        '''
+        e_group = parser.add_mutually_exclusive_group()
+        e_group.add_argument("--enable-trigger", action="store", dest="enable_trigger", metavar='TRIGGER', choices=SupportBundleTrigger.names(), help="enable specified trigger")
+        e_group.add_argument("--disable-trigger", action="store", dest="disable_trigger", metavar='TRIGGER', choices=SupportBundleTrigger.names(), help="disable specified trigger")
+        e_group.add_argument("--set-purge-limit", type=int, action="store", dest="set_purge_limit", metavar='PERCENTS', help="set purge limit")
+        '''
+
+        # refactored 'cscli support_bundle' according to http://goo.gl/VUmcV
+        subparsers = parser.add_subparsers()
+        # cscli support_bundle collect
+        try:
+            from t0.cli.handlers.starters import support_bundle_collect
+            support_bundle_collect.CollectHandler.arg_subparser(subparsers)
+        except ImportError:
+            pass
+        # cscli support_bundle show
+        try:
+            from t0.cli.handlers.observers import support_bundle_show
+            support_bundle_show.ShowHandler.arg_subparser(subparsers)
+        except ImportError:
+            pass
+        # cscli support_bundle export BUNDLE_ID
+        try:
+            from t0.cli.handlers.observers import support_bundle_export
+            support_bundle_export.ExportHandler.arg_subparser(subparsers)
+        except ImportError:
+            pass
+        # cscli support_bundle set
+        try:
+            from t0.cli.handlers.formatters import support_bundle_set
+            support_bundle_set.SetHandler.arg_subparser(subparsers)
+        except ImportError:
+            pass
+        # cscli support_bundle delete
+        try:
+            from t0.cli.handlers.formatters import support_bundle_delete
+            support_bundle_delete.DeleteHandler.arg_subparser(subparsers)
+        except ImportError:
+            pass
+
+    def handler(self, args):
+        """Given command depends on sub-commands, so let's pass
+        flow control to them using .func() callback"""
+        args.func(args)
+
+
+if __name__ == "__main__":
+    SupportBundleHandler().run(sys.argv[1:])
